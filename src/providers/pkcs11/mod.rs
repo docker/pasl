@@ -74,10 +74,23 @@ impl Provider {
     fn new(
         key_info_store: KeyInfoManagerClient,
         backend: Pkcs11,
-        slot_number: Slot,
+        slot_number: Option<Slot>,
         user_pin: Option<SecretString>,
         software_public_operations: bool,
     ) -> Option<Provider> {
+        // If slot_number is not valid take the first available with a valid token
+        let slot_number = match slot_number {
+            Some(i) => i,
+            None => {
+                let slots = backend.get_slots_with_token().ok()?;
+                if !slots.is_empty() {
+                    slots[0]
+                } else {
+                    return None;
+                }
+            }
+        };
+
         if let Some(pin) = user_pin {
             backend.set_pin(slot_number, pin.expose_secret()).ok()?;
         }
@@ -431,7 +444,7 @@ impl ProviderBuilder {
             self.key_info_store
                 .ok_or_else(|| Error::new(ErrorKind::InvalidData, "missing key info store"))?,
             backend,
-            slot,
+            Some(slot),
             self.user_pin,
             self.software_public_operations.unwrap_or(false),
         )
