@@ -11,8 +11,8 @@ use derivative::Derivative;
 use log::{error, trace};
 use parsec_interface::operations::list_providers::ProviderInfo;
 use parsec_interface::operations::{
-    list_clients, list_keys, psa_destroy_key, psa_export_public_key, psa_generate_key,
-    psa_import_key, psa_sign_hash, psa_verify_hash,
+    list_clients, list_keys, psa_destroy_key, psa_export_key, psa_export_public_key,
+    psa_generate_key, psa_generate_random, psa_import_key, psa_sign_hash, psa_verify_hash,
 };
 use parsec_interface::requests::{Opcode, ProviderId, Result};
 use psa_crypto::types::key;
@@ -22,15 +22,18 @@ use uuid::Uuid;
 mod asym_sign;
 mod context;
 mod error;
+mod generate_random;
 mod key_management;
 
-const SUPPORTED_OPCODES: [Opcode; 6] = [
+const SUPPORTED_OPCODES: [Opcode; 8] = [
     Opcode::PsaDestroyKey,
     Opcode::PsaGenerateKey,
     Opcode::PsaSignHash,
     Opcode::PsaVerifyHash,
     Opcode::PsaImportKey,
     Opcode::PsaExportPublicKey,
+    Opcode::PsaExportKey,
+    Opcode::PsaGenerateRandom,
 ];
 
 /// Trusted Service provider structure
@@ -172,6 +175,23 @@ impl Provide for Provider {
     ) -> Result<psa_export_public_key::Result> {
         trace!("psa_export_public_key ingress");
         self.psa_export_public_key_internal(app_name, op)
+    }
+
+    fn psa_export_key(
+        &self,
+        app_name: ApplicationName,
+        op: psa_export_key::Operation,
+    ) -> Result<psa_export_key::Result> {
+        trace!("psa_export_key ingress");
+        self.psa_export_key_internal(app_name, op)
+    }
+
+    fn psa_generate_random(
+        &self,
+        op: psa_generate_random::Operation,
+    ) -> Result<psa_generate_random::Result> {
+        trace!("psa_generate_random ingress");
+        self.psa_generate_random_internal(op)
     }
 
     fn psa_sign_hash(

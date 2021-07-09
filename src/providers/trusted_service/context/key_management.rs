@@ -2,8 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 use super::error::Error;
 use super::ts_protobuf::{
-    DestroyKeyIn, DestroyKeyOut, ExportPublicKeyIn, GenerateKeyIn, ImportKeyIn, KeyAttributes,
-    KeyLifetime, KeyPolicy,
+    DestroyKeyIn, DestroyKeyOut, ExportKeyIn, ExportPublicKeyIn, GenerateKeyIn, ImportKeyIn,
+    KeyAttributes, KeyLifetime, KeyPolicy,
 };
 use super::Context;
 use log::info;
@@ -82,6 +82,13 @@ impl Context {
     pub fn export_public_key(&self, id: u32) -> Result<Vec<u8>, Error> {
         info!("Handling ExportPublicKey request");
         let req = ExportPublicKeyIn { id };
+        self.send_request(&req)
+    }
+
+    /// Export the key given its ID.
+    pub fn export_key(&self, id: u32) -> Result<Vec<u8>, Error> {
+        info!("Handling ExportKey request");
+        let req = ExportKeyIn { id };
         self.send_request(&req)
     }
 

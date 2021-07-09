@@ -5,10 +5,11 @@ use crate::authenticators::ApplicationName;
 use crate::key_info_managers::KeyTriple;
 use log::error;
 use parsec_interface::operations::{
-    psa_destroy_key, psa_export_public_key, psa_generate_key, psa_import_key,
+    psa_destroy_key, psa_export_key, psa_export_public_key, psa_generate_key, psa_import_key,
 };
 use parsec_interface::requests::{ProviderId, ResponseStatus, Result};
 use parsec_interface::secrecy::ExposeSecret;
+use parsec_interface::secrecy::Secret;
 use psa_crypto::types::key::PSA_KEY_ID_USER_MAX;
 use std::sync::atomic::{AtomicU32, Ordering::Relaxed};
 
@@ -111,6 +112,26 @@ impl Provider {
         match self.context.export_public_key(key_id) {
             Ok(pub_key) => Ok(psa_export_public_key::Result {
                 data: pub_key.into(),
+            }),
+            Err(error) => {
+                format_error!("Export public key status: ", error);
+                Err(error.into())
+            }
+        }
+    }
+
+    pub(super) fn psa_export_key_internal(
+        &self,
+        app_name: ApplicationName,
+        op: psa_export_key::Operation,
+    ) -> Result<psa_export_key::Result> {
+        let key_name = op.key_name;
+        let key_triple = KeyTriple::new(app_name, ProviderId::TrustedService, key_name);
+        let key_id = self.key_info_store.get_key_id(&key_triple)?;
+
+        match self.context.export_key(key_id) {
+            Ok(key) => Ok(psa_export_key::Result {
+                data: Secret::new(key),
             }),
             Err(error) => {
                 format_error!("Export key status: ", error);

@@ -32,6 +32,7 @@ pub mod ts_binding {
 
 mod asym_sign;
 pub mod error;
+mod generate_random;
 mod key_management;
 mod ts_protobuf;
 
