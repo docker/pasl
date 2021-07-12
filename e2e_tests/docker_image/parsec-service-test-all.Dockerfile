@@ -94,15 +94,18 @@ RUN cd nanopb-0.4.4-linux-x86 \
 RUN rm -rf nanopb-0.4.4-linux-x86 nanopb-0.4.4-linux-x86.tar.gz
 
 # Install mock Trusted Services
-RUN git clone https://git.trustedfirmware.org/TS/trusted-services.git --branch main \
+# Setup git config for patching dependencies
+RUN git config --global user.email "some@email.com"
+RUN git config --global user.name "Parsec Team"
+RUN git clone https://git.trustedfirmware.org/TS/trusted-services.git --branch integration \
 	&& cd trusted-services \
-	&& git reset --hard 2fc7e10c7c21e4dafbf63dc9d00dfc2a7a7fddad
+	&& git reset --hard c1cf9120e4ab0b359a27176b079769b9a7e6bb87
 # Install correct python dependencies
 RUN pip3 install -r trusted-services/requirements.txt
 RUN cd trusted-services/deployments/libts/linux-pc/ \
 	&& cmake . \
 	&& make \
-	&& cp libts.so nanopb_install/lib/libprotobuf-nanopb.a mbedcrypto_install/lib/libmbedcrypto.a /usr/local/lib/
+	&& cp libts.so nanopb_install/lib/libprotobuf-nanopb.a mbedtls_install/lib/libmbedcrypto.a /usr/local/lib/
 RUN rm -rf trusted-services
 
 # Create a new token in a new slot. The slot number assigned will be random

@@ -3,13 +3,31 @@
 use super::Provider;
 use crate::authenticators::ApplicationName;
 use crate::key_info_managers::KeyTriple;
-use crate::providers::mbed_crypto::key_management::create_key_id;
 use log::error;
 use parsec_interface::operations::{
     psa_destroy_key, psa_export_public_key, psa_generate_key, psa_import_key,
 };
 use parsec_interface::requests::{ProviderId, ResponseStatus, Result};
 use parsec_interface::secrecy::ExposeSecret;
+use std::sync::atomic::{AtomicU32, Ordering::Relaxed};
+
+/// Creates a new PSA Key ID
+pub fn create_key_id(max_current_id: &AtomicU32) -> Result<u32> {
+    // fetch_add adds 1 to the old value and returns the old value, so add 1 to local value for new ID
+    let new_key_id = max_current_id.fetch_add(1, Relaxed) + 1;
+    if new_key_id > super::context::PSA_KEY_ID_USER_MAX {
+        // If storing key failed and no other keys were created in the mean time, it is safe to
+        // decrement the key counter.
+        let _ = max_current_id.store(super::context::PSA_KEY_ID_USER_MAX, Relaxed);
+        error!(
+            "PSA max key ID limit of {} reached",
+            super::context::PSA_KEY_ID_USER_MAX
+        );
+        return Err(ResponseStatus::PsaErrorInsufficientMemory);
+    }
+
+    Ok(new_key_id)
+}
 
 impl Provider {
     pub(super) fn psa_generate_key_internal(

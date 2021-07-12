@@ -10,7 +10,10 @@ use std::ptr::null_mut;
 use std::slice;
 use std::sync::Mutex;
 use ts_binding::*;
-use ts_protobuf::{CloseKeyIn, GetOpcode, OpenKeyIn, OpenKeyOut, SetHandle};
+use ts_protobuf::GetOpcode;
+
+// Bindgen fails to generate this constant.
+pub const PSA_KEY_ID_USER_MAX: u32 = 0x3fffffff;
 
 #[allow(
     non_snake_case,
@@ -30,6 +33,7 @@ pub mod ts_binding {
     include!(concat!(env!("OUT_DIR"), "/ts_bindings.rs"));
 }
 
+mod asym_encryption;
 mod asym_sign;
 pub mod error;
 mod key_management;
@@ -175,27 +179,6 @@ impl Context {
         unsafe { rpc_caller_end(self.rpc_caller, call_handle) };
 
         Ok(resp)
-    }
-
-    // Send a request that requires a key, given the key's ID.
-    // This function is responsible for opening the key, for sending the
-    // request with `send_request` and for closing the key afterwards.
-    fn send_request_with_key<T: Message + Default>(
-        &self,
-        mut req: impl Message + GetOpcode + SetHandle,
-        key_id: u32,
-    ) -> Result<T, Error> {
-        let open_req = OpenKeyIn { id: key_id };
-        let OpenKeyOut { handle } = self.send_request(&open_req)?;
-
-        req.set_handle(handle);
-        let res = self.send_request(&req);
-        let close_req = CloseKeyIn { handle };
-
-        let res_close = self.send_request(&close_req);
-        let res = res?;
-        res_close?;
-        Ok(res)
     }
 }
 

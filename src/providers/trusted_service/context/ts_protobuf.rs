@@ -48,37 +48,14 @@ macro_rules! opcode_impl {
     };
 }
 
-opcode_impl!(OpenKeyIn, OpenKeyOut, OpenKey);
-opcode_impl!(CloseKeyIn, CloseKey);
 opcode_impl!(GenerateKeyIn, GenerateKeyOut, GenerateKey);
 opcode_impl!(DestroyKeyIn, DestroyKeyOut, DestroyKey);
 opcode_impl!(SignHashIn, SignHashOut, SignHash);
 opcode_impl!(VerifyHashIn, VerifyHashOut, VerifyHash);
 opcode_impl!(ImportKeyIn, ImportKeyOut, ImportKey);
 opcode_impl!(ExportPublicKeyIn, ExportPublicKeyOut, ExportPublicKey);
-
-/// Trait allowing the handle of opened-key-dependent operations
-/// to be set in a generic way.
-pub trait SetHandle {
-    fn set_handle(&mut self, handle: u32);
-}
-
-macro_rules! set_handle_impl {
-    ($type:ty) => {
-        impl SetHandle for $type {
-            fn set_handle(&mut self, handle: u32) {
-                self.handle = handle;
-            }
-        }
-    };
-}
-
-set_handle_impl!(DestroyKeyIn);
-set_handle_impl!(SignHashIn);
-set_handle_impl!(VerifyHashIn);
-set_handle_impl!(AsymmetricEncryptIn);
-set_handle_impl!(AsymmetricDecryptIn);
-set_handle_impl!(ExportPublicKeyIn);
+opcode_impl!(AsymmetricDecryptIn, AsymmetricDecryptOut, AsymmetricDecrypt);
+opcode_impl!(AsymmetricEncryptIn, AsymmetricEncryptOut, AsymmetricEncrypt);
 
 impl Drop for ImportKeyIn {
     fn drop(&mut self) {

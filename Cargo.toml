@@ -66,7 +66,7 @@ mbed-crypto-provider = ["psa-crypto"]
 pkcs11-provider = ["cryptoki", "picky-asn1-der", "picky-asn1", "picky-asn1-x509", "psa-crypto", "rand"]
 tpm-provider = ["tss-esapi", "picky-asn1-der", "picky-asn1", "picky-asn1-x509", "hex"]
 cryptoauthlib-provider = ["rust-cryptoauthlib"]
-trusted-service-provider = ["mbed-crypto-provider", "bindgen", "prost-build", "prost"]
+trusted-service-provider = ["psa-crypto", "bindgen", "prost-build", "prost"]
 all-providers = ["tpm-provider", "pkcs11-provider", "mbed-crypto-provider", "cryptoauthlib-provider"]
 
 # Authenticators

@@ -2,13 +2,12 @@
 // SPDX-License-Identifier: Apache-2.0
 use super::error::Error;
 use super::ts_protobuf::{
-    CloseKeyIn, DestroyKeyIn, DestroyKeyOut, ExportPublicKeyIn, GenerateKeyIn, GenerateKeyOut,
-    ImportKeyIn, ImportKeyOut, KeyAttributes, KeyLifetime, KeyPolicy, OpenKeyIn, OpenKeyOut,
+    DestroyKeyIn, DestroyKeyOut, ExportPublicKeyIn, GenerateKeyIn, ImportKeyIn, KeyAttributes,
+    KeyLifetime, KeyPolicy,
 };
 use super::Context;
 use log::info;
 use psa_crypto::types::key::Attributes;
-use psa_crypto::types::status::Error as PsaError;
 use std::convert::{TryFrom, TryInto};
 use zeroize::Zeroize;
 
@@ -31,10 +30,7 @@ impl Context {
                 }),
             }),
         };
-        let GenerateKeyOut { handle } = self.send_request(&generate_req)?;
-
-        let close_req = CloseKeyIn { handle };
-        self.send_request(&close_req)?;
+        let _ = self.send_request(&generate_req)?;
 
         Ok(())
     }
@@ -74,10 +70,7 @@ impl Context {
             }),
             data,
         };
-        let ImportKeyOut { handle } = self.send_request(&import_req)?;
-
-        let close_req = CloseKeyIn { handle };
-        self.send_request(&close_req)?;
+        let _ = self.send_request(&import_req)?;
 
         Ok(())
     }
@@ -88,37 +81,16 @@ impl Context {
     /// format.
     pub fn export_public_key(&self, id: u32) -> Result<Vec<u8>, Error> {
         info!("Handling ExportPublicKey request");
-        self.send_request_with_key(ExportPublicKeyIn::default(), id)
+        let req = ExportPublicKeyIn { id };
+        self.send_request(&req)
     }
 
     /// Destroy a key given its ID.
     pub fn destroy_key(&self, key_id: u32) -> Result<(), Error> {
         info!("Handling DestroyKey request");
-        let open_req = OpenKeyIn { id: key_id };
-        let OpenKeyOut { handle } = self.send_request(&open_req)?;
 
-        let destroy_req = DestroyKeyIn { handle };
+        let destroy_req = DestroyKeyIn { id: key_id };
         let _proto_resp: DestroyKeyOut = self.send_request(&destroy_req)?;
         Ok(())
-    }
-
-    /// Verify if a key with a given ID exists.
-    pub fn check_key_exists(&self, key_id: u32) -> Result<bool, Error> {
-        info!("Handling CheckKey request");
-        let open_req = OpenKeyIn { id: key_id };
-        match self.send_request(&open_req) {
-            Ok(OpenKeyOut { handle }) => {
-                let close_req = CloseKeyIn { handle };
-                self.send_request(&close_req)?;
-                Ok(true)
-            }
-            Err(e) => {
-                if e == Error::PsaCrypto(PsaError::DoesNotExist) {
-                    Ok(false)
-                } else {
-                    Err(e)
-                }
-            }
-        }
     }
 }

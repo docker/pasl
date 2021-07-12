@@ -11,8 +11,8 @@ use derivative::Derivative;
 use log::{error, trace};
 use parsec_interface::operations::list_providers::ProviderInfo;
 use parsec_interface::operations::{
-    list_clients, list_keys, psa_destroy_key, psa_export_public_key, psa_generate_key,
-    psa_import_key, psa_sign_hash, psa_verify_hash,
+    list_clients, list_keys, psa_asymmetric_decrypt, psa_asymmetric_encrypt, psa_destroy_key,
+    psa_export_public_key, psa_generate_key, psa_import_key, psa_sign_hash, psa_verify_hash,
 };
 use parsec_interface::requests::{Opcode, ProviderId, Result};
 use psa_crypto::types::key;
@@ -20,18 +20,21 @@ use std::collections::HashSet;
 use std::sync::atomic::{AtomicU32, Ordering};
 use uuid::Uuid;
 
+mod asym_encryption;
 mod asym_sign;
 mod context;
 mod error;
 mod key_management;
 
-const SUPPORTED_OPCODES: [Opcode; 6] = [
+const SUPPORTED_OPCODES: [Opcode; 8] = [
     Opcode::PsaDestroyKey,
     Opcode::PsaGenerateKey,
     Opcode::PsaSignHash,
     Opcode::PsaVerifyHash,
     Opcode::PsaImportKey,
     Opcode::PsaExportPublicKey,
+    Opcode::PsaAsymmetricEncrypt,
+    Opcode::PsaAsymmetricDecrypt,
 ];
 
 /// Trusted Service provider structure
@@ -80,12 +83,8 @@ impl Provider {
                             }
                         };
 
-                        if ts_provider.context.check_key_exists(key_id)? {
-                            if key_id > max_key_id {
-                                max_key_id = key_id;
-                            }
-                        } else {
-                            to_remove.push(key_triple.clone());
+                        if key_id > max_key_id {
+                            max_key_id = key_id;
                         }
                     }
                 }
@@ -195,6 +194,24 @@ impl Provide for Provider {
     ) -> Result<psa_verify_hash::Result> {
         trace!("psa_verify_hash ingress");
         self.psa_verify_hash_internal(app_name, op)
+    }
+
+    fn psa_asymmetric_encrypt(
+        &self,
+        app_name: ApplicationName,
+        op: psa_asymmetric_encrypt::Operation,
+    ) -> Result<psa_asymmetric_encrypt::Result> {
+        trace!("psa_asymmetric_encrypt ingress");
+        self.psa_asymmetric_encrypt_internal(app_name, op)
+    }
+
+    fn psa_asymmetric_decrypt(
+        &self,
+        app_name: ApplicationName,
+        op: psa_asymmetric_decrypt::Operation,
+    ) -> Result<psa_asymmetric_decrypt::Result> {
+        trace!("psa_asymmetric_decrypt ingress");
+        self.psa_asymmetric_decrypt_internal(app_name, op)
     }
 }
 

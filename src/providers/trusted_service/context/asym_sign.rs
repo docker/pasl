@@ -17,11 +17,11 @@ impl Context {
     ) -> Result<Vec<u8>, Error> {
         info!("Handling SignHash request");
         let proto_req = SignHashIn {
-            handle: 0,
+            id: key_id,
             hash,
             alg: algorithm.try_into()?,
         };
-        let SignHashOut { signature } = self.send_request_with_key(proto_req, key_id)?;
+        let SignHashOut { signature } = self.send_request(&proto_req)?;
 
         Ok(signature)
     }
@@ -36,12 +36,12 @@ impl Context {
     ) -> Result<(), Error> {
         info!("Handling VerifyHash request");
         let proto_req = VerifyHashIn {
-            handle: 0,
+            id: key_id,
             hash,
             signature,
             alg: algorithm.try_into()?,
         };
-        self.send_request_with_key(proto_req, key_id)?;
+        self.send_request(&proto_req)?;
 
         Ok(())
     }
