@@ -54,8 +54,16 @@ opcode_impl!(SignHashIn, SignHashOut, SignHash);
 opcode_impl!(VerifyHashIn, VerifyHashOut, VerifyHash);
 opcode_impl!(ImportKeyIn, ImportKeyOut, ImportKey);
 opcode_impl!(ExportPublicKeyIn, ExportPublicKeyOut, ExportPublicKey);
+opcode_impl!(ExportKeyIn, ExportKeyOut, ExportKey);
+opcode_impl!(GenerateRandomIn, GenerateRandomOut, GenerateRandom);
 
 impl Drop for ImportKeyIn {
+    fn drop(&mut self) {
+        self.data.zeroize();
+    }
+}
+
+impl Drop for ExportKeyOut {
     fn drop(&mut self) {
         self.data.zeroize();
     }
